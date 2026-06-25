@@ -121,6 +121,17 @@ h1 {
 }
 .speak-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #3b4ed0; }
 
+.reveal-btn-q {
+  font: inherit; font-size: .95rem; font-weight: bold; padding: 10px;
+  border: 2px dashed var(--accent); border-radius: 16px; background: var(--soft);
+  color: var(--accent); cursor: pointer; align-self: center; padding-left: 18px; padding-right: 18px;
+}
+.reveal-btn-q:active { transform: translateY(2px); }
+.reveal-text {
+  text-align: center; color: var(--muted); font-size: 1rem; line-height: 1.35;
+  background: var(--soft); border-radius: 14px; padding: 10px 14px;
+}
+
 .options { display: flex; flex-direction: column; gap: 10px; }
 .opt-btn {
   font: inherit; font-size: 1.1rem; padding: 15px 16px; border: 3px solid #e3e6ff;

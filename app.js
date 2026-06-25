@@ -68,7 +68,8 @@ const MODES = {
       if (wrong.length < 3) return null;
       return {
         tag: "Synonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}<br>Pick the vocab word that means the SAME.`,
+        sub: "Pick the vocab word that means the SAME.",
+        reveal: `(${word.p}) ${word.d}`,
         type: "mc",
         options: shuffle([correct, ...wrong]), answer: correct,
         explain: `${cap(word.w)} means the same as ${word.vsyn.join(", ")}.`,
@@ -85,7 +86,8 @@ const MODES = {
       if (wrong.length < 3) return null;
       return {
         tag: "Antonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}<br>Pick the vocab word that means the OPPOSITE.`,
+        sub: "Pick the vocab word that means the OPPOSITE.",
+        reveal: `(${word.p}) ${word.d}`,
         type: "mc",
         options: shuffle([correct, ...wrong]), answer: correct,
         explain: `${cap(word.w)} is the opposite of ${word.vant.join(", ")}.`,
@@ -320,6 +322,12 @@ function renderQuestion() {
   // speak button only when there's a single word to say
   $("speakBtn").parentElement.classList.toggle("hidden", !q.sayWord);
 
+  // reveal-meaning button only when the question hides the definition
+  const revealText = $("revealText");
+  revealText.textContent = q.reveal || "";
+  revealText.classList.add("hidden");
+  $("revealBtn").classList.toggle("hidden", !q.reveal);
+
   const progress = `${state.idx + 1} / ${state.questions.length}`;
   $("progressText").textContent = progress;
   $("progressFill").style.width =
@@ -460,6 +468,10 @@ function init() {
   $("speakBtn").addEventListener("click", () => {
     const q = state && state.questions[state.idx];
     if (q && q.sayWord) say(q.sayWord, 0.85);
+  });
+  $("revealBtn").addEventListener("click", () => {
+    $("revealText").classList.remove("hidden");
+    $("revealBtn").classList.add("hidden");
   });
 
   if ("serviceWorker" in navigator) {
