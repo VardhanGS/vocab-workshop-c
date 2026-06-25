@@ -1,10 +1,11 @@
-const CACHE = "vocabc-v1";
+const CACHE = "vocabc-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./words.js",
+  "./relations.js",
   "./data_part1.js",
   "./data_part2.js",
   "./data_part3.js",

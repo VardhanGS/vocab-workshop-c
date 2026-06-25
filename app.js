@@ -36,6 +36,13 @@ function distinct(pool, n, ok) {
 //   { tag, prompt, promptSmall, sub, sayWord, type:"mc"|"type",
 //     options:[...], answer, accept:[...], explain }
 
+// Distractor vocab words: words from the pool that are NOT the target,
+// not synonyms of it, and not antonyms of it.
+function distractorWords(word, pool, n) {
+  const banned = new Set([word.w, ...word.vsyn, ...word.vant].map(norm));
+  return distinct(pool, n, (o) => !banned.has(norm(o.w))).map((o) => o.w);
+}
+
 const MODES = {
   meaning: {
     name: "Right Meaning", emoji: "🎯", desc: "Pick the definition",
@@ -52,72 +59,77 @@ const MODES = {
     },
   },
 
-  synMc: {
-    name: "Synonym (MC)", emoji: "🟰", desc: "Choose the synonym",
+  synMatch: {
+    name: "Synonym Match", emoji: "🟰", desc: "Same-meaning vocab word",
     build(word, pool) {
-      if (!word.syn.length) return null;
-      const correct = pick(word.syn);
-      const banned = new Set([word.w, ...word.syn].map(norm));
-      const wrong = distinct(pool, 3, (o) => {
-        const c = pick2(o, word);
-        return c && !banned.has(norm(c));
-      }).map((o) => pick2(o, word)).filter(Boolean);
-      const uniq = [...new Set(wrong)].slice(0, 3);
-      if (uniq.length < 3) return null;
+      if (!word.vsyn.length) return null;
+      const correct = pick(word.vsyn);
+      const wrong = distractorWords(word, pool, 3);
+      if (wrong.length < 3) return null;
       return {
         tag: "Synonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}`, type: "mc",
-        options: shuffle([correct, ...uniq]), answer: correct,
-        explain: `Synonyms of ${word.w}: ${word.syn.join(", ")}`,
+        sub: `(${word.p}) ${word.d}<br>Pick the vocab word that means the SAME.`,
+        type: "mc",
+        options: shuffle([correct, ...wrong]), answer: correct,
+        explain: `${cap(word.w)} means the same as ${word.vsyn.join(", ")}.`,
       };
     },
   },
 
-  antMc: {
-    name: "Antonym (MC)", emoji: "↔️", desc: "Choose the opposite",
+  antMatch: {
+    name: "Antonym Match", emoji: "↔️", desc: "Opposite vocab word",
     build(word, pool) {
-      if (!word.ant.length) return null;
-      const correct = pick(word.ant);
-      const banned = new Set([word.w, ...word.ant, ...word.syn].map(norm));
-      const wrong = distinct(pool, 3, (o) => {
-        const c = o.syn[0] || o.w;
-        return c && !banned.has(norm(c));
-      }).map((o) => o.syn[0] || o.w);
-      const uniq = [...new Set(wrong)].slice(0, 3);
-      if (uniq.length < 3) return null;
+      if (!word.vant.length) return null;
+      const correct = pick(word.vant);
+      const wrong = distractorWords(word, pool, 3);
+      if (wrong.length < 3) return null;
       return {
         tag: "Antonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}`, type: "mc",
-        options: shuffle([correct, ...uniq]), answer: correct,
-        explain: `Antonyms of ${word.w}: ${word.ant.join(", ")}`,
+        sub: `(${word.p}) ${word.d}<br>Pick the vocab word that means the OPPOSITE.`,
+        type: "mc",
+        options: shuffle([correct, ...wrong]), answer: correct,
+        explain: `${cap(word.w)} is the opposite of ${word.vant.join(", ")}.`,
       };
     },
   },
 
-  synType: {
-    name: "Type a Synonym", emoji: "✍️", desc: "Write a synonym",
-    build(word) {
-      if (!word.syn.length) return null;
+  sameOpp: {
+    name: "Same or Opposite?", emoji: "⚖️", desc: "Judge the pair",
+    build(word, pool) {
+      const hasSyn = word.vsyn.length, hasAnt = word.vant.length;
+      let other, answer;
+      const roll = Math.random();
+      if (hasSyn && (roll < 0.34 || !hasAnt)) {
+        other = pick(word.vsyn); answer = "Synonyms";
+      } else if (hasAnt && roll < 0.67) {
+        other = pick(word.vant); answer = "Antonyms";
+      } else {
+        const d = distractorWords(word, pool, 1);
+        if (!d.length) return null;
+        other = d[0]; answer = "Unrelated";
+      }
       return {
-        tag: "Synonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}`, type: "type",
-        placeholder: "Type a synonym...",
-        accept: word.syn.map(norm), answer: word.syn.join(" / "),
-        explain: `Synonyms: ${word.syn.join(", ")}`,
+        tag: "Same or opposite?",
+        prompt: `${word.w.toUpperCase()} &nbsp;/&nbsp; ${other.toUpperCase()}`,
+        promptSmall: true,
+        sub: "How are these two words related?",
+        sayWord: null, type: "mc",
+        options: ["Synonyms", "Antonyms", "Unrelated"], answer,
+        explain: `${cap(word.w)} (${word.d}) and ${other} are ${answer.toLowerCase()}.`,
       };
     },
   },
 
-  antType: {
-    name: "Type an Antonym", emoji: "🔁", desc: "Write an opposite",
+  recall: {
+    name: "Recall the Word", emoji: "✍️", desc: "Type from the clue",
     build(word) {
-      if (!word.ant.length) return null;
       return {
-        tag: "Antonyms", prompt: word.w, sayWord: word.w,
-        sub: `(${word.p}) ${word.d}`, type: "type",
-        placeholder: "Type an antonym...",
-        accept: word.ant.map(norm), answer: word.ant.join(" / "),
-        explain: `Antonyms: ${word.ant.join(", ")}`,
+        tag: "Recall the word",
+        prompt: `“${word.assoc}”`, promptSmall: true,
+        sub: `(${word.p}) ${word.d}`, sayWord: null, type: "type",
+        placeholder: "Type the vocab word...",
+        accept: [norm(word.w)], answer: word.w,
+        explain: `${cap(word.w)} (${word.p}) — ${word.d}`,
       };
     },
   },
@@ -158,44 +170,31 @@ const MODES = {
   analogy: {
     name: "Analogies", emoji: "🔗", desc: "Complete the pair",
     build(word, pool) {
-      // Build A:B :: C:? where both pairs share the same relation.
-      const useSyn = word.syn.length && (!word.ant.length || Math.random() < 0.5);
-      const rel = useSyn ? "syn" : "ant";
+      // A:B :: C:? where both pairs share the same vocab-to-vocab relation.
+      const rel = word.vsyn.length && (!word.vant.length || Math.random() < 0.5)
+        ? "vsyn" : "vant";
       if (!word[rel].length) return null;
-      // model pair from another word with the same relation present
       const model = distinct(pool, 1, (o) => o.w !== word.w && o[rel].length)[0];
       if (!model) return null;
       const correct = pick(word[rel]);
-      const banned = new Set([word.w, ...word.syn, ...word.ant].map(norm));
-      const wrong = distinct(pool, 3, (o) => {
-        const c = o.syn[0] || o.w;
-        return c && !banned.has(norm(c));
-      }).map((o) => o.syn[0] || o.w);
-      const uniq = [...new Set(wrong)].slice(0, 3);
-      if (uniq.length < 3) return null;
-      const relWord = rel === "syn" ? "same" : "opposite";
+      const wrong = distractorWords(word, pool, 3);
+      if (wrong.length < 3) return null;
+      const relWord = rel === "vsyn" ? "same" : "opposite";
       return {
         tag: "Analogies",
         prompt: `${model.w.toUpperCase()} : ${pick(model[rel]).toUpperCase()}  ::  ${word.w.toUpperCase()} : ?`,
         promptSmall: true,
-        sub: `The first pair means the ${relWord}. Complete the second pair.`,
+        sub: `The first pair means the ${relWord}. Complete the second pair with a vocab word.`,
         sayWord: null, type: "mc",
-        options: shuffle([correct, ...uniq]), answer: correct,
-        explain: `${cap(word.w)} ${rel === "syn" ? "means" : "is the opposite of"} ${correct}.`,
+        options: shuffle([correct, ...wrong]), answer: correct,
+        explain: `${cap(word.w)} ${rel === "vsyn" ? "means the same as" : "is the opposite of"} ${correct}.`,
       };
     },
   },
 };
 
 // Order shown on the home grid.
-const MODE_ORDER = ["meaning", "synMc", "antMc", "fill", "analogy", "assoc", "synType", "antType"];
-
-// helper: a synonym of o that isn't a synonym of the target word
-function pick2(o, target) {
-  const banned = new Set([target.w, ...target.syn].map(norm));
-  const cand = o.syn.filter((s) => !banned.has(norm(s)));
-  return cand.length ? pick(cand) : (banned.has(norm(o.w)) ? null : o.w);
-}
+const MODE_ORDER = ["meaning", "synMatch", "antMatch", "fill", "analogy", "assoc", "sameOpp", "recall"];
 
 // Turn "... ____ ..." into HTML with a styled blank.
 function sentenceHTML(s) {
