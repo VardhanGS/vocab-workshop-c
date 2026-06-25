@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5b6ef5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Vocab C" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Vocab Workshop — Level C</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- HOME SCREEN -->
+    <section id="home" class="screen active">
+      <div class="bee">📚</div>
+      <h1>Vocab Workshop</h1>
+      <p class="tagline">Level C &middot; Enriched Edition &middot; 300 words</p>
+
+      <label class="field-label" for="unitSelect">Pick your unit</label>
+      <select id="unitSelect" class="level-select"></select>
+
+      <label class="field-label" for="countSelect">Questions per round</label>
+      <select id="countSelect" class="level-select">
+        <option value="10">10 questions</option>
+        <option value="20" selected>20 questions</option>
+        <option value="30">30 questions</option>
+        <option value="999">All words in scope</option>
+      </select>
+
+      <p class="section-head">Choose a practice mode</p>
+      <div class="mode-grid" id="modeGrid"><!-- filled by JS --></div>
+
+      <button id="reviewBtn" class="review-btn">
+        🔁 Review my tricky words <span id="reviewCount" class="review-count">0</span>
+      </button>
+
+      <div class="home-stats">
+        <span>🏆 Best score: <b id="bestScore">0%</b></span>
+      </div>
+    </section>
+
+    <!-- QUIZ SCREEN -->
+    <section id="quiz" class="screen">
+      <header class="quiz-header">
+        <button id="homeBtn" class="icon-btn" title="Home">🏠</button>
+        <div class="progress">
+          <span id="progressText">1 / 20</span>
+          <div class="progress-bar"><div id="progressFill"></div></div>
+        </div>
+        <div class="score-pill">⭐ <b id="score">0</b></div>
+      </header>
+
+      <div class="card">
+        <div class="mode-tag" id="modeTag"></div>
+        <div id="prompt" class="prompt"></div>
+        <div id="subPrompt" class="sub-prompt"></div>
+
+        <div class="speak-row">
+          <button id="speakBtn" class="speak-btn">🔊 Say the word</button>
+        </div>
+
+        <div id="options" class="options"></div>
+
+        <form id="answerForm" class="answer-form hidden" autocomplete="off">
+          <input id="answerInput" class="answer-input" type="text"
+                 inputmode="text" autocapitalize="none" autocorrect="off"
+                 spellcheck="false" placeholder="Type your answer..." />
+          <button id="checkBtn" type="submit" class="check-btn">Check ✓</button>
+        </form>
+
+        <div id="feedback" class="feedback"></div>
+        <button id="nextBtn" class="next-btn hidden">Next →</button>
+      </div>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="results" class="screen">
+      <div class="bee">🎉</div>
+      <h1>Round complete!</h1>
+      <p id="resultSummary" class="result-summary"></p>
+      <div id="missedList" class="missed-list"></div>
+      <button id="againBtn" class="check-btn wide">Play again ↻</button>
+      <button id="resultsHomeBtn" class="next-btn">Back home</button>
+    </section>
+
+  </div>
+
+  <script src="data_part1.js"></script>
+  <script src="data_part2.js"></script>
+  <script src="data_part3.js"></script>
+  <script src="words.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
